@@ -1,0 +1,44 @@
+.env
+*.env
+*.bak
+*.bak.*
+*.log
+
+data/.codex/
+data/.npm/
+data/.paperclip/
+data/instances/default/.env
+data/instances/default/config.json
+data/instances/default/config.json.backup
+data/instances/default/data/
+data/instances/default/companies/
+
+# Paperclip run artifacts / probes
+**/issues-list-*.json
+**/issues-list-*.txt
+**/*headers*.txt
+**/*response*.txt
+**/*payload*.json
+**/docs/fav-*/
+
+# OS/editor
+.DS_Store
+*.swp
+
+# PostgreSQL runtime database
+/data/instances/default/db/
+
+# Secrets / telemetry
+data/instances/default/secrets/
+data/instances/default/telemetry/
+
+# Agent runtime state
+data/instances/default/workspaces/*/memory/
+data/instances/default/workspaces/*/FAV-*
+
+# Workspace docs/proofs
+data/instances/default/workspaces/*/docs/
+
+# Marketplace/runtime metadata
+data/instances/default/workspaces/*/.agents/
+

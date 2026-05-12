@@ -1,0 +1,64 @@
+services:
+  paperclip:
+    image: ghcr.io/hostinger/hvps-paperclip:latest
+    restart: unless-stopped
+    ports:
+      - "${PUBLIC_PORT}:3100"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=letsencrypt
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=3100
+      # HTTP router that redirects to HTTPS
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.rule=Host(`${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.entrypoints=web
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.middlewares=${COMPOSE_PROJECT_NAME}-redirect
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}-redirect.redirectscheme.permanent=true
+    volumes:
+      - ./data:/paperclip
+    env_file:
+      - .env
+    environment:
+      PAPERCLIP_PUBLIC_URL: http://${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}
+      PAPERCLIP_ALLOWED_HOSTNAMES: ${TRAEFIK_HOST},${VPS_IP}:${PUBLIC_PORT}
+  telegram-bridge:
+    image: node:18
+    restart: unless-stopped
+    working_dir: /app
+    labels:
+      - traefik.enable=true
+
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-telegram.rule=Host(`${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}`) && Path(`/telegram/webhook`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-telegram.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-telegram.tls.certresolver=letsencrypt
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-telegram.priority=100
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-telegram.service=${COMPOSE_PROJECT_NAME}-bridge
+
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-events.rule=Host(`${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}`) && Path(`/paperclip/issues/events`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-events.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-events.tls.certresolver=letsencrypt
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-events.priority=100
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-events.service=${COMPOSE_PROJECT_NAME}-bridge
+
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}-bridge.loadbalancer.server.port=8787  
+
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-ceo-intake.rule=Host(`${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}`) && Path(`/paperclip/telegram/ceo`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-ceo-intake.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-ceo-intake.tls.certresolver=letsencrypt
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-ceo-intake.priority=100
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-ceo-intake.service=${COMPOSE_PROJECT_NAME}-bridge
+    volumes:
+      - ./data/instances/default/workspaces/4b56645f-1b3a-408d-bb8f-c9e671a302fb:/app
+    env_file:
+      - .env
+    environment:
+      PORT: 8787
+      TELEGRAM_WEBHOOK_PATH: /telegram/webhook
+      PAPERCLIP_ISSUE_EVENT_PATH: /paperclip/issues/events
+      PAPERCLIP_CEO_FORWARD_URL: http://paperclip:3100/api/routine-triggers/public/db1bac6a27c6cc9aa0860219/fire
+      PAPERCLIP_CEO_FORWARD_TOKEN: ${PAPERCLIP_CEO_FORWARD_TOKEN}
+    command: node plugins/telegram-bridge-fallback/src/server.js
+    ports:
+      - "8787:8787"

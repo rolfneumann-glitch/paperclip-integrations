@@ -1,0 +1,12 @@
+{
+  "name": "telegram-bridge-fallback",
+  "version": "0.1.0",
+  "description": "Fallback Telegram bridge plugin scaffold for FAV-7 unblock.",
+  "author": "Paperclip CTO",
+  "license": "UNLICENSED",
+  "interface": {
+    "displayName": "Telegram Bridge Fallback",
+    "description": "Routes Telegram bot updates into CEO-centric Paperclip workflows.",
+    "icon": "telegram"
+  }
+}
