@@ -1,0 +1,27 @@
+# Add this service to your existing /docker/paperclip-d0sw/docker-compose.yml
+# and create ./data/google-calendar-bridge/tokens on the host.
+
+google-calendar-bridge:
+  build:
+    context: ./plugins/google-calendar-bridge
+  restart: unless-stopped
+  environment:
+    PORT: "8791"
+    PUBLIC_BASE_URL: "https://paperclip-d0sw.srv1628724.hstgr.cloud"
+    BRIDGE_BASE_PATH: "/google-calendar"
+    BRIDGE_API_TOKEN: "${GOOGLE_CALENDAR_BRIDGE_TOKEN}"
+    GOOGLE_CLIENT_ID: "${GOOGLE_CALENDAR_CLIENT_ID}"
+    GOOGLE_CLIENT_SECRET: "${GOOGLE_CALENDAR_CLIENT_SECRET}"
+    GOOGLE_REDIRECT_URI: "https://paperclip-d0sw.srv1628724.hstgr.cloud/google-calendar/oauth/callback"
+    GOOGLE_SCOPES: "https://www.googleapis.com/auth/calendar.readonly"
+    TOKEN_DIR: "/data/tokens"
+    TOKEN_FILE: "google-calendar-token.json"
+    ALLOWED_GOOGLE_EMAIL: ""
+  volumes:
+    - ./data/google-calendar-bridge/tokens:/data/tokens
+  labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.google-calendar-bridge.rule=Host(`paperclip-d0sw.srv1628724.hstgr.cloud`) && PathPrefix(`/google-calendar`)"
+    - "traefik.http.routers.google-calendar-bridge.entrypoints=websecure"
+    - "traefik.http.routers.google-calendar-bridge.tls=true"
+    - "traefik.http.services.google-calendar-bridge.loadbalancer.server.port=8791"

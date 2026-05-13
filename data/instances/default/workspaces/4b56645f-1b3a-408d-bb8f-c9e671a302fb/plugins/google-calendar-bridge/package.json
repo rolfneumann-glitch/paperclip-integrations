@@ -1,0 +1,20 @@
+{
+  "name": "google-calendar-bridge",
+  "version": "0.1.0",
+  "description": "Small HTTP bridge for Paperclip to access Google Calendar via OAuth2.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/server.js"
+  },
+  "dependencies": {
+    "@googleapis/calendar": "^10.0.0",
+    "express": "^5.1.0",
+    "google-auth-library": "^10.5.0",
+    "nanoid": "^5.1.6"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
