@@ -1,0 +1,12 @@
+{
+  "name": "google-calendar-bridge",
+  "version": "0.1.0",
+  "description": "Local Google Calendar bridge plugin for Paperclip scheduling workflows.",
+  "author": "Paperclip CTO",
+  "license": "UNLICENSED",
+  "interface": {
+    "displayName": "Google Calendar Bridge",
+    "description": "Provides OAuth-backed Google Calendar read and optional write APIs via a local bridge.",
+    "icon": "calendar"
+  }
+}

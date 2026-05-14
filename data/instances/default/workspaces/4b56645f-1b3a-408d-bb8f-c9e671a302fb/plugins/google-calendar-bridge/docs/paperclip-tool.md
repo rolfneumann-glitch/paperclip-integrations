@@ -22,4 +22,6 @@ OAuth browser routes do not require the bearer token:
 - PATCH /google-calendar/events/:eventId
 - DELETE /google-calendar/events/:eventId?calendarId=primary
 
-Start with read-only scope. POST/PATCH/DELETE will return a clear error unless Google OAuth was granted a write-capable scope.
+Read-only-first policy:
+- Default `ALLOW_WRITE=false`: POST/PATCH/DELETE return `405 write_disabled`.
+- Enable writes only with explicit approval by setting `ALLOW_WRITE=true` and granting write-capable OAuth scope.

@@ -42,3 +42,10 @@ data/instances/default/workspaces/*/docs/
 # Marketplace/runtime metadata
 data/instances/default/workspaces/*/.agents/
 
+
+# local runtime data / secrets
+data/.bash_history
+data/google-calendar-bridge/
+*.bak*
+*.bad-agent-token-patch.*
+data/instances/default/skills/

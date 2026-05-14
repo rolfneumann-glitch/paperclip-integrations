@@ -8,7 +8,7 @@ Small standalone Node.js HTTP service for connecting Paperclip to Google Calenda
 - Persistent refresh-token storage
 - Calendar list
 - Bounded event search
-- Create, patch, delete events when write scope is granted
+- Optional create/patch/delete events (disabled by default)
 - Bearer-token protection for API routes
 - Docker-friendly deployment next to the existing Telegram bridge
 
@@ -94,6 +94,15 @@ https://www.googleapis.com/auth/calendar.events
 ```
 
 Change `GOOGLE_SCOPES`, restart the bridge, and re-open `/oauth/start` to grant the new scope.
+
+## Read-only first (default behavior)
+
+This bridge starts in read-only mode by default:
+
+- `ALLOW_WRITE=false` (default): `POST/PATCH/DELETE /events*` return `405 write_disabled`
+- `ALLOW_WRITE=true`: write endpoints are enabled (still requires write-capable OAuth scope)
+
+This gives an explicit runtime guard so write behavior cannot be enabled by scopes alone.
 
 ## Paperclip integration approach
 

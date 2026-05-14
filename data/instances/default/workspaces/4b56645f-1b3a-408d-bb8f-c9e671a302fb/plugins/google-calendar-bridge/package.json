@@ -12,6 +12,7 @@
     "@googleapis/calendar": "^10.0.0",
     "express": "^5.1.0",
     "google-auth-library": "^10.5.0",
+    "googleapis": "^150.0.1",
     "nanoid": "^5.1.6"
   },
   "engines": {

@@ -62,3 +62,33 @@ services:
     command: node plugins/telegram-bridge-fallback/src/server.js
     ports:
       - "8787:8787"
+
+  google-calendar-bridge:
+    build:
+      context: ./data/instances/default/workspaces/4b56645f-1b3a-408d-bb8f-c9e671a302fb/plugins/google-calendar-bridge
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PORT: 8791
+      PUBLIC_BASE_URL: https://${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}
+      BRIDGE_BASE_PATH: /google-calendar
+      BRIDGE_API_TOKEN: ${GOOGLE_CALENDAR_BRIDGE_TOKEN}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CALENDAR_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CALENDAR_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: https://${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}/google-calendar/oauth/callback
+      GOOGLE_SCOPES: https://www.googleapis.com/auth/calendar.events
+      TOKEN_DIR: /data/tokens
+      TOKEN_FILE: google-calendar-token.json
+      ALLOWED_GOOGLE_EMAIL: ""
+    volumes:
+      - ./data/google-calendar-bridge/tokens:/data/tokens
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-google-calendar.rule=Host(`${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}`) && PathPrefix(`/google-calendar`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-google-calendar.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-google-calendar.tls.certresolver=letsencrypt
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-google-calendar.priority=100
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}-google-calendar.loadbalancer.server.port=8791
+    ports:
+      - "8791:8791"

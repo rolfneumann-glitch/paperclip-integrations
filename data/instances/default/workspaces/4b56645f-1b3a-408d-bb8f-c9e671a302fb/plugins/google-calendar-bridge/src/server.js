@@ -94,7 +94,13 @@ function apiError(res, err) {
 }
 
 app.get(`${cfg.basePath}/health`, (req, res) => {
-  res.json({ ok: true, service: 'google-calendar-bridge', basePath: cfg.basePath, scopes: cfg.scopes });
+  res.json({
+    ok: true,
+    service: 'google-calendar-bridge',
+    basePath: cfg.basePath,
+    scopes: cfg.scopes,
+    mode: 'read-write'
+  });
 });
 
 app.get(`${cfg.basePath}/oauth/start`, (req, res) => {
@@ -219,5 +225,12 @@ app.delete(`${cfg.basePath}/events/:eventId`, async (req, res) => {
 app.use((req, res) => res.status(404).json({ ok: false, error: 'not_found' }));
 
 app.listen(cfg.port, () => {
-  console.log(JSON.stringify({ ok: true, service: 'google-calendar-bridge', port: cfg.port, basePath: cfg.basePath, redirectUri: cfg.redirectUri }));
+  console.log(JSON.stringify({
+    ok: true,
+    service: 'google-calendar-bridge',
+    port: cfg.port,
+    basePath: cfg.basePath,
+    redirectUri: cfg.redirectUri,
+    mode: 'read-write'
+  }));
 });
