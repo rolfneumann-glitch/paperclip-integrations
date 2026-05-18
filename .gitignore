@@ -51,3 +51,5 @@ data/google-calendar-bridge/
 data/instances/default/skills/
 
 data/instances/default/workspaces/*/artifacts/
+
+data/instances/default/workspaces/*/artifacts/
