@@ -1,0 +1,12 @@
+{
+  "name": "fundgrube-mcp-bridge",
+  "version": "0.1.0",
+  "description": "Fundgrube MCP bridge plugin for Paperclip.",
+  "author": "Favorite Books",
+  "license": "UNLICENSED",
+  "interface": {
+    "displayName": "Fundgrube MCP Bridge",
+    "description": "Provides MCP-backed tools for addresses and business objects.",
+    "icon": "database"
+  }
+}

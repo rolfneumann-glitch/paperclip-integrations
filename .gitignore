@@ -49,3 +49,5 @@ data/google-calendar-bridge/
 *.bak*
 *.bad-agent-token-patch.*
 data/instances/default/skills/
+
+data/instances/default/workspaces/*/artifacts/

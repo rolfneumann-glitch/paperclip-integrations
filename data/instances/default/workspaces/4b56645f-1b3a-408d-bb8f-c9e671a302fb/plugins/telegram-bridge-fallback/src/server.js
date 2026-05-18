@@ -5,7 +5,15 @@ const { URL } = require("node:url");
 const { createBridge, getAcceptedWebhookPaths, normalizePath } = require("./bridge");
 const { createIssueEventNotifier } = require("./issue-notifier");
 const { createCeoRouteHandler } = require("./route-handler");
-const { createCeoIntakeHandler } = require("./ceo-intake");
+const {
+  createCeoIntakeHandler,
+  getIntakeConfig,
+  resolveCeoAgentId,
+  createIssue,
+  sendAck,
+  splitTelegramText,
+} = require("./ceo-intake");
+const messageQueue = require("./message-queue");
 
 function parseAllowedHostnames(raw) {
   if (!raw) return [];
@@ -86,6 +94,93 @@ async function startServer({ port = 8787, env = process.env, logger = console } 
       const body = await readJsonBody(req);
       const pathname = new URL(req.url || "/", "http://localhost").pathname;
       const normalizedPath = normalizePath(pathname);
+      if (normalizedPath === "/telegram/messages/next" && String(req.method || "").toUpperCase() === "GET") {
+        const item = messageQueue.getNext();
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify({ ok: true, message: item }));
+        return;
+      }
+
+      const ackMatch = normalizedPath.match(/^\/telegram\/messages\/([^/]+)\/ack$/);
+      if (ackMatch && String(req.method || "").toUpperCase() === "POST") {
+        const acknowledged = messageQueue.acknowledge(ackMatch[1]);
+        res.writeHead(acknowledged ? 200 : 404, { "content-type": "application/json" });
+        res.end(JSON.stringify({ ok: acknowledged, acknowledged }));
+        return;
+      }
+
+      if (normalizedPath === "/telegram/messages/stats" && String(req.method || "").toUpperCase() === "GET") {
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify({ ok: true, stats: messageQueue.stats() }));
+        return;
+      }
+
+      if (normalizedPath === "/telegram/messages/process-next" && String(req.method || "").toUpperCase() === "POST") {
+        const item = messageQueue.getNext();
+
+        if (!item) {
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end(JSON.stringify({ ok: true, processed: false, reason: "queue_empty" }));
+          return;
+        }
+
+        try {
+          const cfg = getIntakeConfig(env);
+
+          const text = String(item?.event?.payload?.text || "").trim();
+
+          const parsedText = splitTelegramText(text);
+
+          const issueInput = {
+            text,
+            source: "telegram",
+            route: "ceo",
+            telegram: {
+              chatId: String(item?.event?.payload?.chatId || ""),
+              userId: String(item?.event?.payload?.userId || ""),
+            },
+            raw: item.event,
+          };
+
+          const assigneeAgentId = await resolveCeoAgentId(cfg, fetch);
+
+          const workflow = "ceo-queue";
+
+          const issue = await createIssue(
+            cfg,
+            assigneeAgentId,
+            {
+              ...issueInput,
+              text: parsedText.title,
+              additionalDescription: parsedText.description,
+            },
+            workflow,
+            fetch
+          );
+
+          await sendAck(cfg, issueInput, issue, fetch);
+
+          messageQueue.acknowledge(item.id);
+
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end(JSON.stringify({
+            ok: true,
+            processed: true,
+            issueId: issue?.id || null,
+            identifier: issue?.identifier || null,
+            queueMessageId: item.id,
+          }));
+        } catch (err) {
+          res.writeHead(500, { "content-type": "application/json" });
+          res.end(JSON.stringify({
+            ok: false,
+            error: err instanceof Error ? err.message : "internal_error",
+          }));
+        }
+
+        return;
+      }
+
       const request = {
         method: req.method,
         path: pathname,

@@ -101,6 +101,24 @@ function buildIssueTitle(text) {
   return `CEO Telegram intake: ${preview}`;
 }
 
+function splitTelegramText(text) {
+  const normalized = String(text || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .trim();
+
+  const lines = normalized.split("\n");
+
+  const title = String(lines.shift() || "").trim();
+  const description = lines.join("\n").trim();
+
+  return {
+    title: title || "Telegram intake",
+    description,
+  };
+}
+
+
 async function resolveCeoAgentId(cfg, fetchImpl) {
   if (cfg.ceoAgentId) return cfg.ceoAgentId;
   const response = await fetchImpl(`${cfg.apiUrl}/api/companies/${cfg.companyId}/agents`, {
@@ -269,6 +287,10 @@ function createCeoIntakeHandler({ env = process.env, fetchImpl = fetch, logger =
 }
 
 module.exports = {
+  sendAck,
+  createIssue,
+  resolveCeoAgentId,
+  splitTelegramText,
   buildIssueDescription,
   buildIssueTitle,
   createCeoIntakeHandler,

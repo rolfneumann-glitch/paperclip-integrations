@@ -1,5 +1,7 @@
 "use strict";
 
+const { enqueue } = require("./message-queue");
+
 function parseIntOrDefault(raw, fallback) {
   const parsed = Number.parseInt(String(raw ?? ""), 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -45,6 +47,15 @@ function createCeoRouteHandler(logger = console, options = {}) {
   return async function routeToCeo(event) {
     const eventId =
       event?.eventId || `telegram:${event?.payload?.chatId || "unknown-chat"}:${event?.updateId ?? "unknown-update"}`;
+    const queued = enqueue(event);
+    logger.log("[telegram-bridge] queued telegram event", {
+      queueId: queued?.id,
+      eventId,
+      updateId: event.updateId,
+    });
+
+    return { accepted: true, route: "ceo", forwarded: false, queued: true, queueId: queued?.id };
+
     logger.log("[telegram-bridge] routed event", {
       source: event.source,
       route: event.route,
