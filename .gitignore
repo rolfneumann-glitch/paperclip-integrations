@@ -53,3 +53,5 @@ data/instances/default/skills/
 data/instances/default/workspaces/*/artifacts/
 
 data/instances/default/workspaces/*/artifacts/
+
+**/node_modules/

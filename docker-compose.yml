@@ -92,3 +92,21 @@ services:
       - traefik.http.services.${COMPOSE_PROJECT_NAME}-google-calendar.loadbalancer.server.port=8791
     ports:
       - "8791:8791"
+
+  fundgrube-mcp-bridge:
+    build:
+      context: ./data/instances/default/workspaces/4b56645f-1b3a-408d-bb8f-c9e671a302fb/plugins/fundgrube-mcp-bridge
+    restart: unless-stopped
+    environment:
+      PORT: 8792
+      BRIDGE_BASE_PATH: /fundgrube
+      MCP_ENDPOINT: https://wayati.com/fundgrube/orderman/mcp/mcp-server.php
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-fundgrube.rule=Host(`${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}`) && PathPrefix(`/fundgrube`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-fundgrube.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-fundgrube.tls.certresolver=letsencrypt
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-fundgrube.priority=100
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}-fundgrube.loadbalancer.server.port=8792
+    ports:
+      - "8792:8792"

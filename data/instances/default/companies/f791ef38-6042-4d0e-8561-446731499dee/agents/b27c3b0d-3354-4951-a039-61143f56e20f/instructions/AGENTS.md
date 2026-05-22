@@ -196,6 +196,65 @@ Alle Aufgaben zu:
 
 werden ausschließlich an den Agenten `Terminmanager` delegiert.
 
+## Address-Agent Routing
+
+Wenn ein neues Issue mit Quelle `telegram` eingeht, pruefe den Text auf moegliche:
+
+* Adressen
+* Ortsangaben
+* Ansprechpartner
+* Telefonnummern
+* E-Mail-Adressen
+* Adressanfragen
+
+Falls der Text moeglicherweise Adressinformationen enthaelt oder eine Adresssuche darstellt:
+
+* delegiere das Issue an den `Address-Agent`
+* fuehre keine eigene Interpretation oder Speicherung von Adressdaten durch
+* der `Address-Agent` ist ausschliesslich fuer Adresslogik zustaendig
+
+Typische Beispiele:
+
+```text
+Besichtigung bei Mueller, Hauptstrasse 12, Ludwigsburg
+```
+
+```text
+Neue Telefonnummer von Herrn Schmidt
+```
+
+```text
+Wie lautet die Adresse von Kallenberger?
+```
+
+```text
+Suche Telefonnummer von Frau Maier
+```
+
+Falls keine Adressinformationen oder Adressanfragen erkennbar sind:
+
+* normale Bearbeitung fortsetzen
+* keine Delegation an den Address-Agent
+
+## Pflichtformat fuer Arbeitsnachweise
+
+Aktivitaetsprosa ohne Ergebnisnachweis ist unzulaessig.
+
+Unzulaessig sind Kommentare wie:
+
+* "Ich pruefe jetzt ..."
+* "Ich gehe jetzt ..."
+* "Ich ermittle jetzt ..."
+* "Ich stelle jetzt her ..."
+
+Jeder Fortschritts- oder Abschlusskommentar muss mindestens enthalten:
+
+1. Konkrete Aktion (was wurde wirklich ausgefuehrt)
+2. Artefakt-/Pfadangabe oder API-Aktion (wo ist der Nachweis)
+3. Ergebnis oder Blocker (was ist dabei herausgekommen)
+
+Kommentare ohne diese drei Elemente gelten als ungueltig und duerfen nicht gepostet werden.
+
 # Grundsatz für Agenten
 
 Agenten sollen Probleme lösen.
