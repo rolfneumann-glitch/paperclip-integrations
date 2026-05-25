@@ -1,9 +1,10 @@
 "use strict";
 
 const http = require("node:http");
+const { execFile } = require("node:child_process");
 const { URL } = require("node:url");
 const { createBridge, getAcceptedWebhookPaths, normalizePath } = require("./bridge");
-const { createIssueEventNotifier } = require("./issue-notifier");
+const { createIssueEventNotifier, sendTelegramMessage } = require("./issue-notifier");
 const { createCeoRouteHandler } = require("./route-handler");
 const {
   createCeoIntakeHandler,
@@ -63,6 +64,89 @@ function readJsonBody(req) {
   });
 }
 
+
+
+async function transcribeAudio(audioPath) {
+  return await new Promise((resolve, reject) => {
+    execFile(
+      "python3",
+      [
+        "/app/plugins/telegram-bridge-fallback/src/transcribe.py",
+        audioPath
+      ],
+      {
+        timeout: 300000,
+        maxBuffer: 10 * 1024 * 1024,
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(`transcribe_failed:${stderr || error.message}`));
+          return;
+        }
+
+        try {
+          resolve(JSON.parse(stdout));
+        } catch (e) {
+          reject(new Error(`invalid_transcribe_json:${stdout}`));
+        }
+      }
+    );
+  });
+}
+
+async function downloadTelegramAudio({ event, env, fetchImpl = fetch }) {
+  const raw = event?.payload?.raw?.message || {};
+  const audio = raw.voice || raw.audio || null;
+  const fileId = audio?.file_id || "";
+  if (!fileId) return null;
+
+  const botToken = env.TELEGRAM_BOT_TOKEN || "";
+  if (!botToken) throw new Error("missing_telegram_bot_token");
+
+  const fileInfoResponse = await fetchImpl(
+    `https://api.telegram.org/bot${botToken}/getFile?file_id=${encodeURIComponent(fileId)}`
+  );
+  const fileInfo = await fileInfoResponse.json();
+
+  if (!fileInfo?.ok || !fileInfo?.result?.file_path) {
+    throw new Error(`telegram_getFile_failed:${JSON.stringify(fileInfo)}`);
+  }
+
+  const filePath = fileInfo.result.file_path;
+  const fileName = filePath.split("/").pop() || `${fileId}.oga`;
+  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+
+  const fs = require("node:fs/promises");
+  const path = require("node:path");
+
+  const dir = env.TELEGRAM_AUDIO_DIR || "/app/data/telegram-audio";
+  await fs.mkdir(dir, { recursive: true });
+
+  const localName = `${event.updateId || Date.now()}-${safeName}`;
+  const localPath = path.join(dir, localName);
+
+  const downloadResponse = await fetchImpl(
+    `https://api.telegram.org/file/bot${botToken}/${filePath}`
+  );
+
+  if (!downloadResponse.ok) {
+    throw new Error(`telegram_audio_download_failed:${downloadResponse.status}`);
+  }
+
+  const buffer = Buffer.from(await downloadResponse.arrayBuffer());
+  await fs.writeFile(localPath, buffer);
+
+  return {
+    localPath,
+    filePath,
+    fileId,
+    fileUniqueId: audio?.file_unique_id || "",
+    fileSize: audio?.file_size || fileInfo?.result?.file_size || buffer.length,
+    mimeType: audio?.mime_type || "",
+    duration: audio?.duration || "",
+  };
+}
+
 function isNormalizedCeoIntakePayload(body) {
   if (!body || typeof body !== "object") return false;
   return body.source === "telegram" && body.route === "ceo";
@@ -94,6 +178,50 @@ async function startServer({ port = 8787, env = process.env, logger = console } 
       const body = await readJsonBody(req);
       const pathname = new URL(req.url || "/", "http://localhost").pathname;
       const normalizedPath = normalizePath(pathname);
+      if (normalizedPath === "/telegram/send" && String(req.method || "").toUpperCase() === "POST") {
+        const auth = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
+        const token = env.TELEGRAM_SEND_TOKEN || env.PAPERCLIP_WEBHOOK_TOKEN || "";
+        if (!token) {
+          res.writeHead(500, { "content-type": "application/json" });
+          res.end(JSON.stringify({ ok: false, error: "missing_send_token" }));
+          return;
+        }
+        if (auth !== token) {
+          res.writeHead(401, { "content-type": "application/json" });
+          res.end(JSON.stringify({ ok: false, error: "unauthorized" }));
+          return;
+        }
+
+        try {
+          const text = String(body.text || "").trim();
+          const chatId = String(body.chat_id || env.TELEGRAM_NOTIFY_CHAT_ID || env.TELEGRAM_ALLOWED_CHAT_ID || "").trim();
+
+          if (!text) {
+            res.writeHead(400, { "content-type": "application/json" });
+            res.end(JSON.stringify({ ok: false, error: "missing_text" }));
+            return;
+          }
+
+          const result = await sendTelegramMessage({
+            botToken: env.TELEGRAM_BOT_TOKEN || "",
+            chatId,
+            text,
+            fetchImpl: fetch,
+          });
+
+          logger.log("[telegram-bridge] telegram send success", { chatId, messageId: result?.result?.message_id });
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end(JSON.stringify({ ok: true, result }));
+          return;
+        } catch (err) {
+          logger.error("[telegram-bridge] telegram send failed", { error: err?.message || String(err) });
+          res.writeHead(500, { "content-type": "application/json" });
+          res.end(JSON.stringify({ ok: false, error: err?.message || String(err) }));
+          return;
+        }
+      }
+
+
       if (normalizedPath === "/telegram/messages/next" && String(req.method || "").toUpperCase() === "GET") {
         const item = messageQueue.getNext();
         res.writeHead(200, { "content-type": "application/json" });
@@ -127,9 +255,45 @@ async function startServer({ port = 8787, env = process.env, logger = console } 
         try {
           const cfg = getIntakeConfig(env);
 
-          const text = String(item?.event?.payload?.text || "").trim();
+          let text = String(item?.event?.payload?.text || "").trim();
+
+          let audioInfo = null;
+          let transcription = null;
+
+          if (item?.event?.payload?.type === "audio") {
+            audioInfo = await downloadTelegramAudio({ event: item.event, env, fetchImpl: fetch });
+
+            if (audioInfo?.localPath) {
+              transcription = await transcribeAudio(audioInfo.localPath);
+              if (transcription?.text) {
+                text = String(transcription.text || "").trim();
+              }
+            }
+          }
 
           const parsedText = splitTelegramText(text);
+
+          const audioDescription = audioInfo
+            ? [
+                transcription?.text
+                  ? [
+                      "Transkript:",
+                      transcription.text,
+                      ""
+                    ].join("\n")
+                  : "",
+                "Audio-Datei:",
+                audioInfo.localPath,
+                "",
+                "Audio-Metadaten:",
+                `- fileId: ${audioInfo.fileId}`,
+                `- fileUniqueId: ${audioInfo.fileUniqueId}`,
+                `- mimeType: ${audioInfo.mimeType}`,
+                `- duration: ${audioInfo.duration}`,
+                `- fileSize: ${audioInfo.fileSize}`,
+                `- telegramFilePath: ${audioInfo.filePath}`,
+              ].filter(Boolean).join("\n")
+            : "";
 
           const issueInput = {
             text,
@@ -142,7 +306,13 @@ async function startServer({ port = 8787, env = process.env, logger = console } 
             raw: item.event,
           };
 
-          const assigneeAgentId = await resolveCeoAgentId(cfg, fetch);
+          let assigneeAgentId;
+
+          if (item?.event?.payload?.type === "image") {
+            assigneeAgentId = cfg.imageAgentId || await resolveCeoAgentId(cfg, fetch);
+          } else {
+            assigneeAgentId = await resolveCeoAgentId(cfg, fetch);
+          }
 
           const workflow = "ceo-queue";
 
@@ -151,8 +321,8 @@ async function startServer({ port = 8787, env = process.env, logger = console } 
             assigneeAgentId,
             {
               ...issueInput,
-              text: parsedText.title,
-              additionalDescription: parsedText.description,
+              text: parsedText.title || (audioInfo ? "Audio-Nachricht aus Telegram" : ""),
+              additionalDescription: [parsedText.description, audioDescription].filter(Boolean).join("\n\n"),
             },
             workflow,
             fetch
@@ -171,10 +341,18 @@ async function startServer({ port = 8787, env = process.env, logger = console } 
             queueMessageId: item.id,
           }));
         } catch (err) {
+          const message = err instanceof Error ? err.message : "internal_error";
+          logger.error("[telegram-bridge] process-next failed", {
+            queueMessageId: item?.id,
+            eventId: item?.eventId,
+            error: message,
+          });
+          if (item?.id) messageQueue.release(item.id);
+
           res.writeHead(500, { "content-type": "application/json" });
           res.end(JSON.stringify({
             ok: false,
-            error: err instanceof Error ? err.message : "internal_error",
+            error: message,
           }));
         }
 

@@ -24,7 +24,8 @@ services:
       PAPERCLIP_PUBLIC_URL: http://${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}
       PAPERCLIP_ALLOWED_HOSTNAMES: ${TRAEFIK_HOST},${VPS_IP}:${PUBLIC_PORT}
   telegram-bridge:
-    image: node:18
+    build:
+      context: ./data/instances/default/workspaces/4b56645f-1b3a-408d-bb8f-c9e671a302fb/plugins/telegram-bridge-fallback
     restart: unless-stopped
     working_dir: /app
     labels:
@@ -110,3 +111,13 @@ services:
       - traefik.http.services.${COMPOSE_PROJECT_NAME}-fundgrube.loadbalancer.server.port=8792
     ports:
       - "8792:8792"
+
+  audio-transcriber:
+    build:
+      context: ./data/instances/default/workspaces/4b56645f-1b3a-408d-bb8f-c9e671a302fb/plugins/audio-transcriber
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./data/instances/default/workspaces/4b56645f-1b3a-408d-bb8f-c9e671a302fb/plugins/audio-transcriber:/app
+      - ./data/instances/default/workspaces/4b56645f-1b3a-408d-bb8f-c9e671a302fb/data/telegram-audio:/audio:ro
+    command: sleep infinity
