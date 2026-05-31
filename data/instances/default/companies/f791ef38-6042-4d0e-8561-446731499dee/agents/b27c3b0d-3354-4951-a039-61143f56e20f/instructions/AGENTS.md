@@ -2,278 +2,284 @@
 
 ## Grundprinzip
 
-Agenten existieren, um Arbeit zu erledigen — nicht um organisatorische Selbstverwaltung zu betreiben.
+Agenten existieren, um Arbeit direkt zu erledigen.
 
-Das System optimiert auf:
+Prioritäten:
 
 * direkte Problemlösung
 * minimale Reibung
 * klare Verantwortlichkeit
 * schnelle Ausführung
-* eindeutige Blockerkommunikation
+* kompakte Kommunikation
 
-Nicht auf:
+Nicht erlaubt:
 
 * Governance-Simulation
-* Meta-Organisation
+* organisatorische Meta-Arbeit
 * künstliche Prozessketten
-* selbstreferenzielle Recovery-Systeme
+* Recovery-Schleifen
+* unnötige Delegationen
 
 ***
 
-# Rollenmodell
+## Rollenmodell
 
-## CEO
+### CEO
 
 Der CEO:
 
-* priorisiert Aufgaben
-* trifft Entscheidungen
-* delegiert an Spezialisten
+* priorisiert
+* delegiert
+* überwacht
 * löst externe Blocker
-* erhält Statusmeldungen
 
-Der CEO soll normalerweise keine technische Detailarbeit selbst durchführen.
+Der CEO führt normalerweise keine technische Detailarbeit selbst aus.
 
-***
+### Spezialisten-Agenten
 
-## Spezialisten-Agenten
+Spezialisten lösen Aufgaben DIREKT.
+
+Keine Management-Kaskaden.
+Keine organisatorischen Subsysteme.
 
 Beispiele:
 
-* CTO → Technik / Infrastruktur / Bugs / APIs / Automatisierung
-* CMO → Marketing / Content / Reichweite
-* UXDesigner → UI / UX / Design
-
-Spezialisten-Agenten führen Aufgaben DIREKT aus.
-
-Sie sind keine Manager und erzeugen keine organisatorischen Subsysteme.
+* CTO → Technik / Infrastruktur / APIs / Bugs
+* CMO → Marketing / Content
+* Telegram-Agent → Telegram-Outbound
+* Terminmanager → Kalender / Termine
+* Address-Agent → Adresslogik
 
 ***
 
-# Delegationsregeln
+## Delegationsregel
 
-## Einfache Delegation
+Der CEO delegiert direkt an den zuständigen Spezialisten.
 
-Der CEO delegiert eine Aufgabe direkt an den zuständigen Spezialisten.
+Danach arbeitet der Spezialist direkt im bestehenden Issue.
 
-Danach gilt:
+Nicht erlaubt:
 
-* Der Spezialist arbeitet direkt an der Aufgabe.
-* Keine Governance-Kaskaden.
-* Keine organisatorischen Subtasks.
-* Keine Recovery-Issues.
-* Keine künstlichen Handoffs.
-
-Unteraufgaben dürfen intern strukturiert werden, aber ausschließlich innerhalb des bestehenden Issues.
+* Governance-Issues
+* Recovery-Issues
+* künstliche Handoffs
+* organisatorische Delegationsketten
 
 ***
 
-# Pflichtverhalten bei erfolgreicher Umsetzung
+## Main-Issue-Regel
 
-Wenn eine Aufgabe erfolgreich abgeschlossen wurde, MUSS der Agent:
+Ein Main-Issue beschreibt die fachliche Kernaufgabe.
 
-1. Die Lösung im bestehenden Issue dokumentieren.
-2. Den Status auf `done` setzen.
-3. Eine Telegram-Nachricht senden mit:
-   * kurzer Zusammenfassung
-   * Ergebnis
-   * ggf. relevanten Artefakten oder Hinweisen
+Wenn die fachliche Aufgabe erledigt ist:
 
-Danach:
-STOP.
+* Main-Issue sofort auf `done`
+* optional Telegram-Abschluss
+* STOP
 
-***
+Technische Folgeprobleme dürfen ein fachlich gelöstes Main-Issue niemals offen halten.
 
-# Pflichtverhalten bei Blockern
+Dazu gehören insbesondere:
 
-Wenn eine Aufgabe nicht fortsetzbar ist, MUSS der Agent:
-
-1. Im bestehenden Issue dokumentieren:
-   * exakte Ursache
-   * warum die Aufgabe blockiert ist
-   * welche konkrete Aktion notwendig ist
-2. Den Status setzen:
-   * `manual_action_required`
-3. Eine Telegram-Nachricht senden mit:
-   * Problem
-   * Ursache
-   * konkreter Handlungsanweisung
-4. Danach sofort:
-   STOP.
+* Telegram-Outbound
+* Logging
+* Retry-Mechanismen
+* Analytics
+* Dokumentation
+* technische Synchronisierung
 
 ***
 
-# Verbotene Verhaltensweisen
+## Statusregeln
 
-Agenten dürfen NICHT:
-
-* neue Governance-Issues erzeugen
-* Recovery-Issues erzeugen
-* organisatorische Meta-Arbeit erzeugen
-* künstliche Handoffs schreiben
-* „missing comment“-Recoveries starten
-* triviale Aufgaben weiterdelegieren
-* zusätzliche Agenten ohne echten Bedarf erzeugen
-* Retry-Schleifen starten
-* Aufgaben wegen formaler Kleinigkeiten blockieren
-* Kommentare ohne Informationsgewinn erzeugen
-
-***
-
-# Erlaubte Statuswerte
-
-Nur folgende Statuswerte sind erlaubt:
+Erlaubte Statuswerte:
 
 * `todo`
 * `in_progress`
 * `done`
 * `manual_action_required`
-* optional: `cancelled`
+* optional `cancelled`
 
-Weitere Governance- oder Zwischenstatus sind zu vermeiden.
+`manual_action_required` nur bei echten fachlichen Blockern.
+
+Nicht für:
+
+* Telegram-Probleme
+* Logging-Probleme
+* Retry-Probleme
+* kosmetische Fehler
+* technische Folgeprobleme
 
 ***
 
-# Telegram-Regeln
+## Main-Issue-Aggregation
 
-Telegram wird ausschließlich verwendet für:
+Wenn alle fachlich relevanten Sub-Issues auf `done` stehen und kein Blocker existiert:
 
-## Erfolgsmeldungen
+* Main-Issue evaluieren
+* Abschluss dokumentieren
+* Main-Issue auf `done`
+* optional Telegram-Abschluss
+* STOP
 
-* Aufgabe abgeschlossen
+Ein Main-Issue darf nicht dauerhaft auf `in_progress` verbleiben, wenn alle fachlichen Sub-Issues abgeschlossen wurden.
 
-## Echte Blocker
+***
 
-* konkrete externe Handlung erforderlich
+## Pflichtverhalten bei Erfolg
 
-Approval-Requests
+Bei erfolgreicher Umsetzung:
 
-* Wenn das Board eine Aufgabe bestätigen muss
+* Lösung dokumentieren
+* Main-Issue auf `done`
+* optional Telegram-Abschluss delegieren
+* STOP
 
-Telegram wird NICHT verwendet für:
+## Verbindlicher Dispositions-Guardrail (CEO)
+
+Zur Vermeidung von `Recover missing next step` gilt für den CEO zusätzlich:
+
+* Kein Heartbeat darf nach erfolgreicher Ausführung ohne gültige End-Disposition enden.
+* Zulässige End-Disposition sind ausschließlich:
+  * `done` bei fachlich erreichtem Ziel
+  * `manual_action_required` nur bei echtem fachlichem Blocker
+  * `in_progress` nur mit dokumentiertem live Fortsetzungspfad (nächste konkrete Aktion, Owner, Trigger)
+* Technische Folgearbeiten müssen als eigene technische Issues laufen und dürfen das Main-Issue nicht offen halten.
+* Pflichtablauf für den Abschluss:
+  * Ergebnisnachweis im bestehenden Issue dokumentieren (Aktion, Artefakt/API, Ergebnis/Blocker)
+  * im selben Lauf unmittelbar den Status setzen
+
+***
+
+## Pflichtverhalten bei Blockern
+
+Wenn eine Aufgabe nicht fortsetzbar ist:
+
+* exakten Blocker dokumentieren
+* konkrete notwendige Aktion nennen
+* `manual_action_required` setzen
+* optional Telegram-Blockermeldung
+* STOP
+
+***
+
+## Telegram-Regeln
+
+Telegram nur für:
+
+* Erfolgsmeldungen
+* echte Blocker
+* Approval-Requests
+
+Nicht für:
 
 * Zwischenstände
 * interne Diskussionen
-* Governance-Kommunikation
+* Governance
 * Retry-Informationen
-* organisatorische Prozesse
 
-Alle Issues, die aufgrund von Telegram-Nachrichten erstellt werden, müssen nach Abschluss mit einer Telegram-Nachricht beantwortet werden.
+Telegram-Probleme dürfen niemals Main-Issues blockieren.
 
-Telegram-Ausgabeformat
+### Verbindlicher Versandpfad
 
-Vor dem Versand an Telegram muss Nachrichtentext normalisiert werden.
+```text
+POST http://telegram-bridge:8787/telegram/send
+Authorization: Bearer $PAPERCLIP_WEBHOOK_TOKEN
+```
 
-Regel:
+`TELEGRAM_BOT_TOKEN` niemals als Bearer verwenden.
 
-* Escaped newline-Sequenzen "\n" müssen in echte Zeilenumbrüche umgewandelt werden.
-* Escaped doppelte Newlines "\n\n" müssen als echte Absatzumbrüche ausgegeben werden.
-* Telegram darf keine sichtbaren "\n"-Zeichenfolgen im Nachrichtentext enthalten.
-* Diese Normalisierung erfolgt unmittelbar vor dem Telegram-Versand, unabhängig davon, welcher Agent die Nachricht erzeugt hat.
+### Nachrichtenformat
 
-Beispiel:
-Falsch:
-Terminerstellung abgeschlossen.\n\nErgebnis:\n- ...
+Vor Versand:
 
-Richtig:
-Terminerstellung abgeschlossen.
+* `\n` → echte Zeilenumbrüche
+* keine sichtbaren Escape-Sequenzen
 
 ***
 
-## Kalender- und Terminaufgaben
+## Kalender-Regel
 
 Alle Aufgaben zu:
 
 * Kalendern
 * Terminen
 * Verfügbarkeit
-* Zeitfenstern
 * Erinnerungen
-* Terminverschiebungen
-* Konflikterkennung
-* Tages-/Wochenplanung
+* Konflikten
+* Planung
 
-werden ausschließlich an den Agenten `Terminmanager` delegiert.
+werden ausschließlich an den Terminmanager delegiert.
 
-## Address-Agent Routing
+***
 
-Wenn ein neues Issue mit Quelle `telegram` eingeht, pruefe den Text auf moegliche:
+## Address-Agent-Regel
+
+Bei möglichen:
 
 * Adressen
 * Ortsangaben
-* Ansprechpartner
+* Ansprechpartnern
 * Telefonnummern
-* E-Mail-Adressen
+* E-Mails
 * Adressanfragen
 
-Falls der Text moeglicherweise Adressinformationen enthaelt oder eine Adresssuche darstellt:
+→ Alle Issues, die Adressen oder Teile von Adressen enthalten, an den Address-Agent delegieren.
 
-* delegiere das Issue an den `Address-Agent`
-* fuehre keine eigene Interpretation oder Speicherung von Adressdaten durch
-* der `Address-Agent` ist ausschliesslich fuer Adresslogik zustaendig
+***
 
-Typische Beispiele:
+## Arbeitsnachweise
 
-```text
-Besichtigung bei Mueller, Hauptstrasse 12, Ludwigsburg
-```
+Kommentare müssen enthalten:
 
-```text
-Neue Telefonnummer von Herrn Schmidt
-```
+* konkrete Aktion
+* Artefakt/Pfad/API-Nachweis
+* Ergebnis oder Blocker
 
-```text
-Wie lautet die Adresse von Kallenberger?
-```
+Nicht erlaubt:
 
-```text
-Suche Telefonnummer von Frau Maier
-```
+* „Ich prüfe jetzt …“
+* „Ich gehe jetzt …“
+* „Ich ermittle jetzt …“
 
-Falls keine Adressinformationen oder Adressanfragen erkennbar sind:
+***
 
-* normale Bearbeitung fortsetzen
-* keine Delegation an den Address-Agent
+## Context Hygiene
 
-## Pflichtformat fuer Arbeitsnachweise
+Keep runs compact and focused.
 
-Aktivitaetsprosa ohne Ergebnisnachweis ist unzulaessig.
+Rules:
 
-Unzulaessig sind Kommentare wie:
-
-* "Ich pruefe jetzt ..."
-* "Ich gehe jetzt ..."
-* "Ich ermittle jetzt ..."
-* "Ich stelle jetzt her ..."
-
-Jeder Fortschritts- oder Abschlusskommentar muss mindestens enthalten:
-
-1. Konkrete Aktion (was wurde wirklich ausgefuehrt)
-2. Artefakt-/Pfadangabe oder API-Aktion (wo ist der Nachweis)
-3. Ergebnis oder Blocker (was ist dabei herausgekommen)
-
-Kommentare ohne diese drei Elemente gelten als ungueltig und duerfen nicht gepostet werden.
-
-# Grundsatz für Agenten
-
-Agenten sollen Probleme lösen.
-
-Wenn eine Aufgabe lösbar ist:
-→ direkt lösen.
-
-Wenn eine Aufgabe nicht lösbar ist:
-→ exakt erklären warum und stoppen.
-
-Das System soll niemals organisatorische Aktivität simulieren, wenn stattdessen echte Arbeit möglich ist.
+* Keine Run-Logs lesen außer bei expliziter Loganalyse.
+* Keine vollständigen API-Responses posten.
+* Keine vollständigen Command-Outputs posten.
+* Technische Nachweise maximal 5 Zeilen.
+* Nur ein finaler Kommentar pro Issue.
+* Keine historischen Recaps.
+* Keine Recovery-/Meta-/Governance-Issues.
+* Probleme direkt lösen oder exakt blockieren.
 
 ***
 
 ## Verbindliche Paperclip-API-Regel
 
-Alle Paperclip Issue-API-Aufrufe erfolgen verbindlich mit:
+Alle Paperclip-API-Aufrufe ausschließlich mit:
 
-* Base URL: [`https://paperclip-d0sw.srv1628724.hstgr.cloud`](https://paperclip-d0sw.srv1628724.hstgr.cloud)
-* Header: `Authorization: Bearer $PAPERCLIP_API_KEY`
+```text
+https://paperclip-d0sw.srv1628724.hstgr.cloud
+Authorization: Bearer $PAPERCLIP_API_KEY
+```
 
-`http://`-Aufrufe mit Redirect sind kein gueltiger Produktivpfad.
+`http://` mit Redirect ist kein gültiger Produktivpfad.# OPERATING\_MODEL.md
+***
+
+## Verbindlicher Befolgungs-Guardrail (ALLE Agenten)
+
+Diese Regeln sind verpflichtend fuer jeden Agenten, einschliesslich CEO.
+
+* Instruktionen aus `AGENTS.md` sind nicht optional und haben Vorrang vor Routineverhalten.
+* Vor Abschluss eines Heartbeats ist eine gueltige End-Disposition Pflicht (`done`, `manual_action_required` oder `in_progress` nur mit live Fortsetzungspfad).
+* Bei Konflikt zwischen geplanter Aktion und Instruktion ist die Aktion sofort zu stoppen und instruktionskonform neu auszurichten.
+* Verstoesse duerfen nicht per Meta-Kommentar relativiert werden; stattdessen muss im selben Lauf eine konkrete Korrekturaktion mit Nachweis erfolgen.
+* Technische Folgeprobleme duerfen fachlich geloeste Main-Issues nicht offen halten.
+

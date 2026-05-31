@@ -120,6 +120,7 @@ function detectIssueEventKind(req = {}, issue = {}) {
   const eventRaw = String(body.event || body.eventType || body.type || "").trim().toLowerCase();
   if (["issue_created", "created", "issue.create", "issue.created"].includes(eventRaw)) return "created";
   if (["issue_status_changed", "status_changed", "issue.status_changed"].includes(eventRaw)) return "status_changed";
+  if (["issue_updated", "updated", "issue.update", "issue.updated"].includes(eventRaw)) return "updated";
 
   const fromStatus = resolveFromStatus(req, issue);
   const toStatus = String(issue?.status || body?.transition?.to || body?.toStatus || "").trim();
@@ -151,6 +152,16 @@ function formatConfirmationMessage(req = {}, issue = {}) {
     const toStatus = issue?.status || "unknown";
     const url = issue?.url || "";
     const lines = ["Statuswechsel", `${identifier}: ${title}`, `Von: ${fromStatus}`, `Nach: ${toStatus}`];
+    if (url) lines.push(`Link: ${url}`);
+    return { kind, text: lines.join("\n") };
+  }
+
+  if (kind === "updated") {
+    const identifier = issue?.identifier || issue?.key || "unknown";
+    const title = issue?.title || "Untitled issue";
+    const status = issue?.status || "unknown";
+    const url = issue?.url || "";
+    const lines = ["Issue aktualisiert", `${identifier}: ${title}`, `Status: ${status}`];
     if (url) lines.push(`Link: ${url}`);
     return { kind, text: lines.join("\n") };
   }
@@ -301,7 +312,7 @@ function createIssueEventNotifier({ env = process.env, fetchImpl = fetch, logger
       };
     }
     const confirmation = formatConfirmationMessage(req, issue);
-    if (!["created", "status_changed"].includes(confirmation.kind)) {
+    if (!["created", "status_changed", "updated"].includes(confirmation.kind)) {
       return { status: 200, body: { ok: true, sent: false, skipped: true, reason: "event_filtered" } };
     }
     const dedupeKey = computeEventDedupeKey(req, issue, confirmation.kind);

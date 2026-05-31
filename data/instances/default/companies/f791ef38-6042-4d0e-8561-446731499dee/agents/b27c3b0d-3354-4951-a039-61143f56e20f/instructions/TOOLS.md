@@ -20,6 +20,17 @@ Agents must use the telegram-bridge HTTP endpoint for outbound Telegram notifica
 
 Do NOT assume a built-in Telegram connector exists.
 
+Mandatory send action:
+
+* `POST http://telegram-bridge:8787/telegram/send`
+* Header: `Authorization: Bearer pclip_whsec_f3b9a7c1d8e64f2b9c5e7a1d3f8c6b2e4a9d7c1f`
+
+Never use these as Bearer for `/telegram/send`:
+
+* `TELEGRAM_BOT_TOKEN`
+* `TELEGRAM_WEBHOOK_SECRET_TOKEN`
+* `PAPERCLIP_API_KEY`
+
 Bridge container:
 
 * service: telegram-bridge

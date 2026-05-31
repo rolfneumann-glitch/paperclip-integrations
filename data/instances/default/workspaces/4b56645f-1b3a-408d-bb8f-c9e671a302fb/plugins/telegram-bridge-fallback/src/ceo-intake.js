@@ -15,6 +15,8 @@ function getIntakeConfig(env = process.env) {
     apiKey: trimString(env.PAPERCLIP_API_KEY),
     companyId: trimString(env.PAPERCLIP_COMPANY_ID),
     ceoAgentId: trimString(env.PAPERCLIP_CEO_AGENT_ID),
+    imageAgentId: trimString(env.PAPERCLIP_IMAGE_AGENT_ID),
+    audioAgentId: trimString(env.PAPERCLIP_AUDIO_AGENT_ID),
     systemArchitectAgentId: trimString(env.PAPERCLIP_SYSTEM_ARCHITECT_AGENT_ID),
     telegramBotToken: trimString(env.TELEGRAM_BOT_TOKEN),
   };
@@ -58,40 +60,61 @@ function validateIntakeBody(body) {
   };
 }
 
+function buildTelegramImageMetadata(input) {
+  const message = input?.raw?.payload?.raw?.message || input?.raw?.event?.payload?.raw?.message || {};
+  const photos = Array.isArray(message.photo) ? message.photo : [];
+
+  if (photos.length === 0) return [];
+
+  const selected = [...photos].sort((a, b) => Number(b?.file_size || 0) - Number(a?.file_size || 0))[0];
+
+  return [
+    "Telegram image metadata:",
+    `- updateId: ${input?.raw?.updateId || input?.raw?.payload?.raw?.update_id || "unknown"}`,
+    `- messageId: ${message.message_id || "unknown"}`,
+    `- selectedFileId: ${selected?.file_id || "unknown"}`,
+    `- selectedFileUniqueId: ${selected?.file_unique_id || "unknown"}`,
+    `- selectedFileSize: ${selected?.file_size || "unknown"}`,
+    `- width: ${selected?.width || "unknown"}`,
+    `- height: ${selected?.height || "unknown"}`,
+    "",
+  ];
+}
+
 function buildIssueDescription(input, workflow) {
-  const gateLines = [
-    "Reality/Proof gates (mandatory before delegation/closure):",
-    "- Reality Gate",
-    "  - Verified components + source of truth listed",
-    "  - Explicit assumptions listed and owner assigned",
-    "  - Current blockers listed with unblock owner",
-    "- Proof Gate",
-    "  - External end-to-end proof URL/evidence included for each sub-task",
-    "  - Proof timestamp (UTC) and measurable outcome included",
-    "",
-    "Workflow guardrail:",
-    "- This issue must not be delegated onward or closed without filled Reality/Proof gates.",
-    `- Intake route: ${workflow}`,
-    "",
-  ];
+  const text = String(input?.text || "Telegram intake").trim();
+  const telegram = input?.telegram || {};
+  const raw = input?.raw || {};
+  const event = raw?.event || raw || {};
+  const payload = event?.payload || raw?.payload || {};
+  const rawMessage = payload?.raw?.message || raw?.message || {};
+
   const lines = [
-    "Inbound CEO Telegram intake.",
+    "Nachricht:",
+    text,
     "",
-    `Text: ${input.text}`,
-    "",
-    ...gateLines,
-    "Telegram metadata:",
-    `- chatId: ${input.telegram.chatId || "unknown"}`,
-    `- userId: ${input.telegram.userId || "unknown"}`,
-    `- username: ${input.telegram.username || "unknown"}`,
-    `- messageId: ${input.telegram.messageId || "unknown"}`,
-    `- updateId: ${input.telegram.updateId || "unknown"}`,
-    "",
-    "Raw payload:",
-    "```json",
-    JSON.stringify(input.raw, null, 2),
-    "```",
+    "Metadaten:",
+    `- intakeRoute: ${input?.route || event?.route || "ceo-queue"}`,
   ];
+
+  const imageMetadata = buildTelegramImageMetadata(input);
+  if (imageMetadata.length > 0) {
+    lines.push("", ...imageMetadata.filter(Boolean));
+  }
+
+  lines.push(
+    "",
+    "Telegram metadata:",
+    `- chatId: ${telegram?.chatId || payload?.chatId || rawMessage?.chat?.id || "unknown"}`,
+    `- userId: ${telegram?.userId || payload?.userId || rawMessage?.from?.id || "unknown"}`,
+    `- username: ${telegram?.username || rawMessage?.from?.username || "unknown"}`,
+    `- messageId: ${telegram?.messageId || rawMessage?.message_id || "unknown"}`,
+    `- updateId: ${telegram?.updateId || event?.updateId || raw?.updateId || raw?.update_id || "unknown"}`,
+    "",
+    "Anweisung:",
+    "- Berücksichtige die CEO-Instruktionen."
+  );
+
   return lines.join("\n");
 }
 

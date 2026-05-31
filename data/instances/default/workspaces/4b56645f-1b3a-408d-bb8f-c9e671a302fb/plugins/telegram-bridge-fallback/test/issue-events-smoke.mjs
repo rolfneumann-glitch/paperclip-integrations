@@ -215,6 +215,31 @@ if (!otherEvent.body?.skipped || otherEvent.body?.reason !== "event_filtered") {
   throw new Error("Expected non-create/status-change events to be filtered");
 }
 
+const updatedEvent = await notifier({
+  method: "POST",
+  path: "/paperclip/issues/events",
+  headers: { authorization: "Bearer pc-token-1" },
+  body: {
+    event: "issue.updated",
+    issue: {
+      identifier: "FAV-38",
+      title: "Generic update",
+      status: "in_progress",
+      priority: "low",
+      actor: "CTO",
+    },
+  },
+});
+
+if (updatedEvent.status !== 200 || !updatedEvent.body?.ok || updatedEvent.body?.sent !== true) {
+  throw new Error("Expected issue.updated events to send confirmation");
+}
+
+const updatedPayload = sentPayloads.find((payload) => String(payload?.text || "").includes("FAV-38"));
+if (!String(updatedPayload?.text || "").includes("Issue aktualisiert")) {
+  throw new Error("Expected issue.updated confirmation text marker");
+}
+
 console.log(JSON.stringify({
   smoke: "pass",
   scenario: "issue-event-notification",
@@ -224,5 +249,6 @@ console.log(JSON.stringify({
   actions: [
     String(approvalPayload?.text || "").includes("Statuswechsel") ? "status_changed" : "missing",
     String(donePayload?.text || "").includes("Statuswechsel") ? "completed_status_changed" : "missing",
+    String(updatedPayload?.text || "").includes("Issue aktualisiert") ? "updated" : "missing",
   ],
 }, null, 2));

@@ -5,6 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 8792;
 const MCP_ENDPOINT = process.env.MCP_ENDPOINT;
 const BRIDGE_BASE_PATH = (process.env.BRIDGE_BASE_PATH || "").trim();
+const LEGACY_BASE_PATH = "/fundgrube";
 
 app.use(express.json());
 
@@ -16,6 +17,33 @@ function withBasePath(path) {
     ? BRIDGE_BASE_PATH
     : `/${BRIDGE_BASE_PATH}`;
   return `${normalizedBase}${path}`;
+}
+
+function normalizeBasePath(value) {
+  const trimmed = (value || "").trim();
+  if (!trimmed || trimmed === "/") {
+    return "";
+  }
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
+function routeVariants(path) {
+  const variants = new Set();
+  variants.add(path);
+  variants.add(withBasePath(path));
+
+  const configuredBase = normalizeBasePath(BRIDGE_BASE_PATH);
+  if (configuredBase !== LEGACY_BASE_PATH) {
+    variants.add(`${LEGACY_BASE_PATH}${path}`);
+  }
+
+  return [...variants];
+}
+
+function registerPost(path, handler) {
+  for (const route of routeVariants(path)) {
+    app.post(route, handler);
+  }
 }
 
 app.get(withBasePath("/health"), (req, res) => {
@@ -74,7 +102,7 @@ async function callMcpTool(name, args) {
   };
 }
 
-app.post(withBasePath("/address/search"), async (req, res) => {
+registerPost("/address/search", async (req, res) => {
   try {
     const result = await callMcpTool("address.search", req.body);
     res.status(result.ok ? 200 : 502).json(result);
@@ -86,7 +114,7 @@ app.post(withBasePath("/address/search"), async (req, res) => {
   }
 });
 
-app.post(withBasePath("/address/find"), async (req, res) => {
+registerPost("/address/find", async (req, res) => {
   try {
     const result = await callMcpTool("address.find", req.body);
     res.status(result.ok ? 200 : 502).json(result);
@@ -98,7 +126,7 @@ app.post(withBasePath("/address/find"), async (req, res) => {
   }
 });
 
-app.post(withBasePath("/address/create"), async (req, res) => {
+registerPost("/address/create", async (req, res) => {
   try {
     const result = await callMcpTool("address.create", req.body);
     res.status(result.ok ? 200 : 502).json(result);
@@ -110,7 +138,7 @@ app.post(withBasePath("/address/create"), async (req, res) => {
   }
 });
 
-app.post(withBasePath("/address/update"), async (req, res) => {
+registerPost("/address/update", async (req, res) => {
   try {
     const result = await callMcpTool("address.update", req.body);
     res.status(result.ok ? 200 : 502).json(result);
@@ -123,7 +151,7 @@ app.post(withBasePath("/address/update"), async (req, res) => {
 });
 
 
-app.post(withBasePath("/mcp"), async (req, res) => {
+registerPost("/mcp", async (req, res) => {
   try {
     if (!MCP_ENDPOINT) {
       return res.status(500).json({

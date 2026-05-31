@@ -57,10 +57,18 @@ function parseTelegramUpdate(body) {
   }
 
   if (body.message) {
+    let type = "message";
+
+    if (Array.isArray(body.message.photo) && body.message.photo.length > 0) {
+      type = "image";
+    } else if (body.message.voice || body.message.audio) {
+      type = "audio";
+    }
+
     return {
-      type: "message",
+      type,
       chatId: String(body.message.chat?.id ?? ""),
-      text: String(body.message.text ?? ""),
+      text: String(body.message.text || body.message.caption || ""),
       userId: String(body.message.from?.id ?? ""),
       updateId: body.update_id,
     };

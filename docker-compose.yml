@@ -56,6 +56,7 @@ services:
       - .env
     environment:
       PORT: 8787
+      GUTACHTER_AGENT_ID: ${GUTACHTER_AGENT_ID}
       TELEGRAM_WEBHOOK_PATH: /telegram/webhook
       PAPERCLIP_ISSUE_EVENT_PATH: /paperclip/issues/events
       PAPERCLIP_CEO_FORWARD_URL: http://paperclip:3100/api/routine-triggers/public/db1bac6a27c6cc9aa0860219/fire

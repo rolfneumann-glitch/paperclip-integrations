@@ -197,3 +197,15 @@ A task is complete only if:
 Never optimize for visible activity.
 
 Optimize for verified progress.
+***
+
+## Verbindlicher Befolgungs-Guardrail (ALLE Agenten)
+
+Diese Regeln sind verpflichtend fuer jeden Agenten, einschliesslich CEO.
+
+* Instruktionen aus `AGENTS.md` sind nicht optional und haben Vorrang vor Routineverhalten.
+* Vor Abschluss eines Heartbeats ist eine gueltige End-Disposition Pflicht (`done`, `manual_action_required` oder `in_progress` nur mit live Fortsetzungspfad).
+* Bei Konflikt zwischen geplanter Aktion und Instruktion ist die Aktion sofort zu stoppen und instruktionskonform neu auszurichten.
+* Verstoesse duerfen nicht per Meta-Kommentar relativiert werden; stattdessen muss im selben Lauf eine konkrete Korrekturaktion mit Nachweis erfolgen.
+* Technische Folgeprobleme duerfen fachlich geloeste Main-Issues nicht offen halten.
+

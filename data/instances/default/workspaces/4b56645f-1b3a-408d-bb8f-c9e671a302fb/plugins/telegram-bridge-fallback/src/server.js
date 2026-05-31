@@ -308,13 +308,19 @@ async function startServer({ port = 8787, env = process.env, logger = console } 
 
           let assigneeAgentId;
 
-          if (item?.event?.payload?.type === "image") {
-            assigneeAgentId = cfg.imageAgentId || await resolveCeoAgentId(cfg, fetch);
-          } else {
-            assigneeAgentId = await resolveCeoAgentId(cfg, fetch);
-          }
+            if (
+              item?.event?.payload?.type === "image" &&
+              /\bwert\b/i.test(text) &&
+              process.env.GUTACHTER_AGENT_ID
+            ) {
+              assigneeAgentId = process.env.GUTACHTER_AGENT_ID;
+            } else if (item?.event?.payload?.type === "image") {
+              assigneeAgentId = cfg.imageAgentId || await resolveCeoAgentId(cfg, fetch);
+            } else {
+              assigneeAgentId = await resolveCeoAgentId(cfg, fetch);
+            }
 
-          const workflow = "ceo-queue";
+            const workflow = "ceo-queue";
 
           const issue = await createIssue(
             cfg,

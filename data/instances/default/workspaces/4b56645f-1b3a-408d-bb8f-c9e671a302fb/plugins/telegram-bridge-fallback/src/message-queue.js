@@ -26,7 +26,13 @@ function enqueue(event) {
 }
 
 function getNext() {
-  return queue.find((item) => !item.acknowledged) || null;
+  const item = queue.find((entry) => !entry.acknowledged && !entry.processing) || null;
+  if (!item) return null;
+
+  item.processing = true;
+  item.processingStartedAt = new Date().toISOString();
+
+  return item;
 }
 
 function acknowledge(id) {
@@ -34,6 +40,19 @@ function acknowledge(id) {
   if (!item) return false;
 
   item.acknowledged = true;
+  item.processing = false;
+  item.acknowledgedAt = new Date().toISOString();
+
+  return true;
+}
+
+function release(id) {
+  const item = queue.find((entry) => entry.id === id);
+  if (!item) return false;
+
+  item.processing = false;
+  item.lastReleasedAt = new Date().toISOString();
+
   return true;
 }
 
@@ -48,5 +67,6 @@ module.exports = {
   enqueue,
   getNext,
   acknowledge,
+  release,
   stats,
 };

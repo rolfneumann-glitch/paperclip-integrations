@@ -1,30 +1,41 @@
 # Fundgrube MCP Bridge Tools
 
-## Status
-
-Die Fundgrube-MCP-Bridge läuft als lokaler Docker-Service und leitet einfache HTTP-Endpunkte an den MCP-Server weiter.
-
-Aktuell verifizierte lokale Base URL auf dem Server:
+## Base URL
 
 ```text
 http://fundgrube-mcp-bridge:8792
 ```
 
-Wichtig:
+Alternative lokal:
 
-Der öffentliche Traefik-Pfad `/fundgrube` ist noch nicht als funktionierend verifiziert und soll vom Agenten derzeit nicht verwendet werden.
+```text
+http://127.0.0.1:8792
+```
 
 ***
 
-# Address-Endpunkte
+# Connectivity-Test
 
-## POST /address/search
+```http
+GET /health
+```
 
-Sucht bestehende Adressdatensätze.
+Beispiel:
 
-Vor jeder Neuanlage zwingend zuerst verwenden.
+```http
+GET http://fundgrube-mcp-bridge:8792/health
+```
 
-### Request Body
+***
+
+# Address Search
+
+```http
+POST /address/search
+Content-Type: application/json
+```
+
+Request:
 
 ```json
 {
@@ -32,13 +43,27 @@ Vor jeder Neuanlage zwingend zuerst verwenden.
 }
 ```
 
+Beispiel:
+
+```http
+POST http://fundgrube-mcp-bridge:8792/address/search
+Content-Type: application/json
+
+{
+  "q": "Max Mustermann"
+}
+```
+
 ***
 
-## POST /address/find
+# Address Find
 
-Lädt einen konkreten Datensatz anhand der ID.
+```http
+POST /address/find
+Content-Type: application/json
+```
 
-### Request Body
+Request:
 
 ```json
 {
@@ -46,28 +71,33 @@ Lädt einen konkreten Datensatz anhand der ID.
 }
 ```
 
+Beispiel:
+
+```http
+POST http://fundgrube-mcp-bridge:8792/address/find
+Content-Type: application/json
+
+{
+  "id": 3
+}
+```
+
 ***
 
-## POST /address/create
+# Address Create
 
-Legt einen neuen Adressdatensatz an.
+```http
+POST /address/create
+Content-Type: application/json
+```
 
-Nur verwenden wenn:
-
-* vorher `/address/search` keinen plausiblen Treffer ergeben hat
-* die Daten ausreichend konkret sind
-
-### Mindestfelder
+Mindestfelder:
 
 * `street`
 * `postal_code`
 * `city`
 
-Zusätzlich möglichst:
-
-* `person_name` oder `company_name`
-
-### Request Body
+Request:
 
 ```json
 {
@@ -80,17 +110,32 @@ Zusätzlich möglichst:
 }
 ```
 
+Beispiel:
+
+```http
+POST http://fundgrube-mcp-bridge:8792/address/create
+Content-Type: application/json
+
+{
+  "person_name": "Max Mustermann",
+  "street": "Hauptstraße 12",
+  "postal_code": "71638",
+  "city": "Ludwigsburg",
+  "phone": "07141 123456",
+  "email": "max@example.com"
+}
+```
+
 ***
 
-## POST /address/update
+# Address Update
 
-Aktualisiert bestehende Adressdatensätze.
+```http
+POST /address/update
+Content-Type: application/json
+```
 
-Nur ergänzen oder verbessern.
-
-Keine Verschlechterung bestehender Daten.
-
-### Request Body
+Request:
 
 ```json
 {
@@ -99,34 +144,54 @@ Keine Verschlechterung bestehender Daten.
 }
 ```
 
+Beispiel:
+
+```http
+POST http://fundgrube-mcp-bridge:8792/address/update
+Content-Type: application/json
+
+{
+  "id": 3,
+  "phone": "07141 123456"
+}
+```
+
 ***
 
-# Arbeitsregeln
+# Regeln
 
-* Vor jeder Neuanlage immer zuerst `/address/search` verwenden
-* Keine ungeprüften Dubletten erzeugen
-* Unvollständige Adressen nicht neu anlegen
-* Teilinformationen nur zur Aktualisierung bestehender Datensätze verwenden
-* Bei unklaren Mehrfachtreffern Rückfrage erforderlich
-* Nur belastbare Fakten speichern
+* Vor `address/create` immer zuerst `address/search`
+* Keine ungeprüften Dubletten anlegen
+* Nur dokumentierte Endpunkte verwenden
+* Keine `/api/...` Varianten verwenden
+* Keine alternativen URL-Strukturen raten
 
 ***
 
 # Nicht verfügbar
 
-## address.delete
+* `address.delete`
+* `address.upsert`
 
-`address.delete` ist nicht verfügbar und darf niemals verwendet werden.
+\# Fundgrube MCP Bridge Tools
 
-## address.upsert
 
-`address.upsert` ist aktuell nicht freigegeben.# Fundgrube MCP Bridge Tools
 
-\## Status
+\## Base URL
 
-Die Fundgrube-MCP-Bridge läuft als lokaler Docker-Service und leitet einfache HTTP-Endpunkte an den MCP-Server weiter.
 
-Aktuell verifizierte lokale Base URL auf dem Server:
+
+\`\`\`text
+
+http://fundgrube-mcp-bridge:8792
+
+\`\`\`
+
+
+
+Alternative lokal:
+
+
 
 \`\`\`text
 
@@ -134,21 +199,57 @@ Aktuell verifizierte lokale Base URL auf dem Server:
 
 \`\`\`
 
-Wichtig:
 
-Der öffentliche Traefik-Pfad \`/fundgrube\` ist noch nicht als funktionierend verifiziert und soll vom Agenten derzeit nicht verwendet werden.
 
 \---
 
-\# Address-Endpunkte
 
-\## POST /address/search
 
-Sucht bestehende Adressdatensätze.
+\# Connectivity-Test
 
-Vor jeder Neuanlage zwingend zuerst verwenden.
 
-\### Request Body
+
+\`\`\`http
+
+GET /health
+
+\`\`\`
+
+
+
+Beispiel:
+
+
+
+\`\`\`http
+
+GET http://fundgrube-mcp-bridge:8792/health
+
+\`\`\`
+
+
+
+\---
+
+
+
+\# Address Search
+
+
+
+\`\`\`http
+
+POST /address/search
+
+Content-Type: application/json
+
+\`\`\`
+
+
+
+Request:
+
+
 
 \`\`\`json
 
@@ -160,13 +261,51 @@ Vor jeder Neuanlage zwingend zuerst verwenden.
 
 \`\`\`
 
+
+
+Beispiel:
+
+
+
+\`\`\`http
+
+POST http://fundgrube-mcp-bridge:8792/address/search
+
+Content-Type: application/json
+
+
+
+{
+
+&#x20; "q": "Max Mustermann"
+
+}
+
+\`\`\`
+
+
+
 \---
 
-\## POST /address/find
 
-Lädt einen konkreten Datensatz anhand der ID.
 
-\### Request Body
+\# Address Find
+
+
+
+\`\`\`http
+
+POST /address/find
+
+Content-Type: application/json
+
+\`\`\`
+
+
+
+Request:
+
+
 
 \`\`\`json
 
@@ -178,19 +317,51 @@ Lädt einen konkreten Datensatz anhand der ID.
 
 \`\`\`
 
+
+
+Beispiel:
+
+
+
+\`\`\`http
+
+POST http://fundgrube-mcp-bridge:8792/address/find
+
+Content-Type: application/json
+
+
+
+{
+
+&#x20; "id": 3
+
+}
+
+\`\`\`
+
+
+
 \---
 
-\## POST /address/create
 
-Legt einen neuen Adressdatensatz an.
 
-Nur verwenden wenn:
+\# Address Create
 
-\- vorher \`/address/search\` keinen plausiblen Treffer ergeben hat
 
-\- die Daten ausreichend konkret sind
 
-\### Mindestfelder
+\`\`\`http
+
+POST /address/create
+
+Content-Type: application/json
+
+\`\`\`
+
+
+
+Mindestfelder:
+
+
 
 \- \`street\`
 
@@ -198,11 +369,11 @@ Nur verwenden wenn:
 
 \- \`city\`
 
-Zusätzlich möglichst:
 
-\- \`person\_name\` oder \`company\_name\`
 
-\### Request Body
+Request:
+
+
 
 \`\`\`json
 
@@ -224,17 +395,61 @@ Zusätzlich möglichst:
 
 \`\`\`
 
+
+
+Beispiel:
+
+
+
+\`\`\`http
+
+POST http://fundgrube-mcp-bridge:8792/address/create
+
+Content-Type: application/json
+
+
+
+{
+
+&#x20; "person\_name": "Max Mustermann",
+
+&#x20; "street": "Hauptstraße 12",
+
+&#x20; "postal\_code": "71638",
+
+&#x20; "city": "Ludwigsburg",
+
+&#x20; "phone": "07141 123456",
+
+&#x20; "email": "max@example.com"
+
+}
+
+\`\`\`
+
+
+
 \---
 
-\## POST /address/update
 
-Aktualisiert bestehende Adressdatensätze.
 
-Nur ergänzen oder verbessern.
+\# Address Update
 
-Keine Verschlechterung bestehender Daten.
 
-\### Request Body
+
+\`\`\`http
+
+POST /address/update
+
+Content-Type: application/json
+
+\`\`\`
+
+
+
+Request:
+
+
 
 \`\`\`json
 
@@ -248,30 +463,58 @@ Keine Verschlechterung bestehender Daten.
 
 \`\`\`
 
+
+
+Beispiel:
+
+
+
+\`\`\`http
+
+POST http://fundgrube-mcp-bridge:8792/address/update
+
+Content-Type: application/json
+
+
+
+{
+
+&#x20; "id": 3,
+
+&#x20; "phone": "07141 123456"
+
+}
+
+\`\`\`
+
+
+
 \---
 
-\# Arbeitsregeln
 
-\- Vor jeder Neuanlage immer zuerst \`/address/search\` verwenden
 
-\- Keine ungeprüften Dubletten erzeugen
+\# Regeln
 
-\- Unvollständige Adressen nicht neu anlegen
 
-\- Teilinformationen nur zur Aktualisierung bestehender Datensätze verwenden
 
-\- Bei unklaren Mehrfachtreffern Rückfrage erforderlich
+\- Vor \`address/create\` immer zuerst \`address/search\`
 
-\- Nur belastbare Fakten speichern
+\- Keine ungeprüften Dubletten anlegen
+
+\- Nur dokumentierte Endpunkte verwenden
+
+\- Keine \`/api/...\` Varianten verwenden
+
+\- Keine alternativen URL-Strukturen raten
+
+
 
 \---
+
+
 
 \# Nicht verfügbar
 
-\## address.delete
 
-\`address.delete\` ist nicht verfügbar und darf niemals verwendet werden.
 
-\## address.upsert
-
-\`address.upsert\` ist aktuell nicht freigegeben.
+\- \`address.delete\`
